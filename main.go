@@ -1,53 +1,46 @@
+// Fun with golang. Courtesy rain forest !!
 package main
 
-import "net/http"
-import "log"
-import "encoding/json"
-import "strings"
-
-type weatherData struct {
-	Name string `json:"name"`
-	Main struct {
-		Temp float64 `json:"temp"`
-	} `json:"main"`
-}
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
+)
 
 func main() {
-	http.HandleFunc("/weather/", weatherDataHandler)
-	http.HandleFunc("/", hello)
-	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func weatherDataHandler(w http.ResponseWriter, r *http.Request) {
-	city := strings.SplitN(r.URL.Path, "/", 3)[2]
-
-	data, err := query(city)
+	response, err := http.Get("http://letsrevolutionizetesting.com/challenge.json")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Println("Error while get request")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	json.NewEncoder(w).Encode(data)
-}
+	var f interface{}
 
-func hello(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello Dude !!"))
-}
+	for true {
+		json_resp, err := ioutil.ReadAll(response.Body)
+		err = json.Unmarshal(json_resp, &f)
+		if err != nil {
+			fmt.Println("Error while json parsing breaking!!")
+			break
+		}
 
-func query(city string) (weatherData, error) {
-	resp, err := http.Get("http://api.openweathermap.org/data/2.5/weather?APPID=9aa7f88f84d94f46966fb852e9f2e9e1&q=" + city)
-	if err != nil {
-		return weatherData{}, err
+		f2, ok := f.(map[string]interface{})
+		next_url, ok := f2["follow"].(string)
+		if !ok {
+			fmt.Printf("Done with cycle....")
+			fmt.Println(f2["message"])
+			break
+		}
+		next_url = strings.Replace(next_url, "challenge", "challenge.json", 1)
+		fmt.Printf("%v\n", next_url)
+		response, err = http.Get(next_url)
+		if err != nil {
+			fmt.Println("Error while get request")
+			break
+		}
 	}
 
-	defer resp.Body.Close()
-
-	var d weatherData
-
-	if err := json.NewDecoder(resp.Body).Decode(&d); err != nil {
-		return weatherData{}, err
-	}
-
-	return d, nil
+	fmt.Printf("Final %v\n", f)
 }
