@@ -2,11 +2,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/vipul1409/LearnGoLang/bst"
 )
 
 func main() {
-	root := bst.TreeNode{Val: 10}
-	fmt.Println(root)
+	root := bst.BuildTree(10, 5)
+	bst.PrintInOrder(root)
 }
