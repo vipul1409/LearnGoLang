@@ -30,6 +30,13 @@ func (set *Set) Remove(items ...interface{}) {
 	}
 }
 
+func (set *Set) Exists(item interface{}) bool {
+	set.lock.RLock()
+	defer set.lock.RUnlock()
+	_, err := set.items[item]
+	return err
+}
+
 func New() *Set {
 	s := Set{}
 	s.items = make(map[interface{}]struct{})
